@@ -1,11 +1,14 @@
 import { useState } from "react";
 import ImageDropzone from "./ImageDropzone";
 import { uploadImage } from "./uploadImage";
-import axios from "axios";
+import { useSession } from "./SessionContext";
 
 function WatermarkPage() {
   const [lastHash, setLastHash] = useState(null);
   const [watermark, setWatermark] = useState("");
+
+  // >>> Use secure auth-enabled API calls <<<
+  const { postWithAuth } = useSession();
 
   const handleDrop = async (files) => {
     if (files.length === 0) return;
@@ -16,7 +19,6 @@ function WatermarkPage() {
       const hash = await uploadImage(file);
       console.log("Uploaded:", file.name, "Hash:", hash);
 
-      // store full filename including extension
       const ext = file.name.split(".").pop();
       setLastHash(`${hash}.${ext}`);
     } catch (err) {
@@ -35,13 +37,10 @@ function WatermarkPage() {
     }
 
     try {
-      const response = await axios.post(
-        "http://127.0.0.1:5000/encode",
-        {
-          watermark: watermark,
-          name: lastHash,
-        }
-      );
+      const response = await postWithAuth("/encode", {
+        watermark: watermark,
+        name: lastHash,
+      });
 
       console.log(response.data);
       alert("Watermark added successfully!");
